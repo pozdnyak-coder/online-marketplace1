@@ -10,7 +10,6 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     is_seller = db.Column(db.Boolean, default=False)
-    # Отношения с другими таблицами
     products = db.relationship('Product', backref='seller', lazy=True)
     cart_items = db.relationship('CartItem', backref='user', lazy=True)
     reviews = db.relationship('Review', backref='user', lazy=True)
@@ -24,7 +23,7 @@ class Product(db.Model):
     stock = db.Column(db.Integer, default=1)
     seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    # Отношения
+    is_available = db.Column(db.Boolean, default=True)
     reviews = db.relationship('Review', backref='product', lazy=True)
 
 class CartItem(db.Model):
@@ -32,7 +31,6 @@ class CartItem(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     quantity = db.Column(db.Integer, default=1)
-    # Отношение
     product = db.relationship('Product', backref='cart_items')
 
 class Review(db.Model):
