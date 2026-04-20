@@ -6,6 +6,7 @@ from models import db, User, Product, CartItem, Review
 from forms import RegistrationForm, LoginForm, ProductForm, ReviewForm
 import sys
 import logging
+import traceback
 
 # Вывод логов в stdout, который Vercel подхватывает
 logging.basicConfig(
@@ -49,19 +50,24 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    """Главная страница с каталогом товаров и фильтрами."""
-    products = db.session.query(Product).join(User).filter(User.is_seller == True)
-    category = request.args.get('category')
-    search = request.args.get('search')
+    try:
+        # Твой оригинальный код главной страницы
+        products = db.session.query(Product).join(User).filter(User.is_seller == True)
+        category = request.args.get('category')
+        search = request.args.get('search')
 
-    if category and category != 'all':
-        products = products.filter(Product.category == category)
-    if search:
-        products = products.filter(Product.name.contains(search) | Product.description.contains(search))
+        if category and category != 'all':
+            products = products.filter(Product.category == category)
+        if search:
+            products = products.filter(Product.name.contains(search) | Product.description.contains(search))
 
-    products = products.all()
-    return render_template('index.html', products=products)
-
+        products = products.all()
+        return render_template('index.html', products=products)
+    except Exception as e:
+        # Выводим полный traceback в браузер
+        tb = traceback.format_exc()
+        return f"<h1>Error on index page</h1><pre>{tb}</pre>", 500
+        
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     """Страница регистрации нового пользователя."""
