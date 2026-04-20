@@ -1,41 +1,42 @@
 {% extends "base.html" %}
-{% block title %}Каталог товаров{% endblock %}
+{% block title %}Каталог{% endblock %}
 {% block content %}
-<h1 class="mb-4">Каталог товаров</h1>
+<h1>Товары</h1>
 <form method="get" class="row g-3 mb-4">
-    <div class="col-md-4"><input type="text" name="search" class="form-control" placeholder="Поиск по названию..." value="{{ request.args.get('search', '') }}"></div>
+    <div class="col-md-4"><input type="text" name="search" class="form-control" placeholder="Поиск..." value="{{ request.args.get('search', '') }}"></div>
     <div class="col-md-3">
         <select name="category" class="form-select">
-            <option value="all" {% if not request.args.get('category') or request.args.get('category') == 'all' %}selected{% endif %}>Все категории</option>
-            <option value="electronics" {% if request.args.get('category') == 'electronics' %}selected{% endif %}>Электроника</option>
-            <option value="clothing" {% if request.args.get('category') == 'clothing' %}selected{% endif %}>Одежда</option>
-            <option value="books" {% if request.args.get('category') == 'books' %}selected{% endif %}>Книги</option>
-            <option value="home" {% if request.args.get('category') == 'home' %}selected{% endif %}>Товары для дома</option>
-            <option value="other" {% if request.args.get('category') == 'other' %}selected{% endif %}>Другое</option>
+            <option value="all">Все категории</option>
+            <option value="electronics" {% if request.args.get('category')=='electronics' %}selected{% endif %}>Электроника</option>
+            <option value="clothing" {% if request.args.get('category')=='clothing' %}selected{% endif %}>Одежда</option>
+            <option value="books" {% if request.args.get('category')=='books' %}selected{% endif %}>Книги</option>
+            <option value="home" {% if request.args.get('category')=='home' %}selected{% endif %}>Дом</option>
+            <option value="other" {% if request.args.get('category')=='other' %}selected{% endif %}>Другое</option>
         </select>
     </div>
-    <div class="col-md-2"><button type="submit" class="btn btn-primary w-100">Найти</button></div>
+    <div class="col-md-2"><button class="btn btn-primary w-100">Найти</button></div>
     <div class="col-md-3"><a href="{{ url_for('index') }}" class="btn btn-outline-secondary w-100">Сбросить</a></div>
 </form>
 <div class="row">
     {% for product in products %}
     <div class="col-md-4 mb-4">
-        <div class="card product-card h-100">
-            <div class="card-img-top bg-primary bg-gradient d-flex align-items-center justify-content-center text-white"><i class="bi bi-box-seam" style="font-size: 4rem;"></i></div>
+        <div class="card h-100">
             <div class="card-body">
-                <h5 class="card-title">{{ product.name }}</h5>
-                <p class="card-text text-muted">{{ product.description[:100] }}...</p>
-                <p class="card-text"><strong>{{ "%.2f"|format(product.price) }} ₽</strong> <span class="text-muted">/ шт</span></p>
-                <p><span class="badge bg-secondary">{{ product.category }}</span> <span class="text-muted">Продавец: {{ product.seller.username }}</span></p>
+                <h5>{{ product.name }}</h5>
+                <p>{{ product.description[:100] }}...</p>
+                <p><strong>{{ "%.2f"|format(product.price) }} ₽</strong></p>
+                <span class="badge bg-secondary">{{ product.category }}</span>
             </div>
-            <div class="card-footer bg-white border-0 pb-3">
+            <div class="card-footer">
                 <a href="{{ url_for('product_detail', product_id=product.id) }}" class="btn btn-outline-primary w-100 mb-2">Подробнее</a>
-                {% if current_user.is_authenticated %}<a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn btn-primary w-100"><i class="bi bi-cart-plus"></i> В корзину</a>{% endif %}
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn btn-success w-100">В корзину</a>
+                {% endif %}
             </div>
         </div>
     </div>
     {% else %}
-    <div class="col-12"><div class="alert alert-info">Товары не найдены.</div></div>
+    <p>Товары не найдены.</p>
     {% endfor %}
 </div>
 {% endblock %}
