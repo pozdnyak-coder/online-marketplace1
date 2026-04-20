@@ -4,14 +4,19 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Product, CartItem, Review
 from forms import RegistrationForm, LoginForm, ProductForm, ReviewForm
+import sys
 import logging
-logging.basicConfig(level=logging.DEBUG)
 
-# --- Настройка приложения ---
+# Вывод логов в stdout, который Vercel подхватывает
+logging.basicConfig(
+    stream=sys.stdout,
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
 app = Flask(__name__)
 app.config['DEBUG'] = True
 app.config['PROPAGATE_EXCEPTIONS'] = True
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
 
 # --- Настройка базы данных (PostgreSQL для Vercel) ---
 # Получаем строку подключения из переменной окружения
@@ -232,3 +237,7 @@ def checkout():
 # Vercel ожидает объект `app`, поэтому этот блок не обязателен, но оставим для локального запуска.
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
+@app.route('/ping')
+def ping():
+    return 'pong'
