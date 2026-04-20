@@ -8,6 +8,8 @@ from forms import RegistrationForm, LoginForm, ProductForm, ReviewForm
 # --- Настройка приложения ---
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
+app.config['DEBUG'] = True
+app.config['PROPAGATE_EXCEPTIONS'] = True
 
 # --- Настройка базы данных (PostgreSQL для Vercel) ---
 # Получаем строку подключения из переменной окружения
