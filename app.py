@@ -4,12 +4,14 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Product, CartItem, Review
 from forms import RegistrationForm, LoginForm, ProductForm, ReviewForm
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 # --- Настройка приложения ---
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
 app.config['DEBUG'] = True
 app.config['PROPAGATE_EXCEPTIONS'] = True
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
 
 # --- Настройка базы данных (PostgreSQL для Vercel) ---
 # Получаем строку подключения из переменной окружения
