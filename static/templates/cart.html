@@ -1,19 +1,47 @@
 {% extends "base.html" %}
 {% block title %}Корзина{% endblock %}
 {% block content %}
-<h1 class="mb-4"><i class="bi bi-cart"></i> Корзина</h1>
+<h2>Корзина</h2>
 {% if cart_items %}
-<div class="table-responsive"><table class="table"><thead><tr><th>Товар</th><th>Цена</th><th>Количество</th><th>Сумма</th><th></th></tr></thead><tbody>
-    {% for item in cart_items %}<tr id="cart-item-{{ item.id }}"><td>{{ item.product.name }}</td><td>{{ "%.2f"|format(item.product.price) }} ₽</td>
-        <td style="width: 150px;"><input type="number" class="form-control quantity-input" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" data-item-id="{{ item.id }}" data-price="{{ item.product.price }}"></td>
-        <td class="item-total">{{ "%.2f"|format(item.product.price * item.quantity) }} ₽</td>
-        <td><a href="{{ url_for('remove_from_cart', item_id=item.id) }}" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></a></td>
-    </tr>{% endfor %}
-    <tr><td colspan="3" class="text-end"><strong>Итого:</strong></td><td><strong id="cart-total">{{ "%.2f"|format(total_price) }} ₽</strong></td><td></td></tr>
-</tbody></table></div>
-<div class="d-flex justify-content-between"><a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Продолжить покупки</a><a href="{{ url_for('checkout') }}" class="btn btn-success">Оформить заказ</a></div>
-<script>document.querySelectorAll('.quantity-input').forEach(input => { input.addEventListener('change', async function() { const itemId = this.dataset.itemId; const newQuantity = this.value; const price = parseFloat(this.dataset.price); const response = await fetch(`/update_cart/${itemId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quantity: newQuantity }) }); const data = await response.json(); if (data.success) { this.closest('tr').querySelector('.item-total').textContent = (price * newQuantity).toFixed(2) + ' ₽'; let total = 0; document.querySelectorAll('.item-total').forEach(el => total += parseFloat(el.textContent)); document.getElementById('cart-total').textContent = total.toFixed(2) + ' ₽'; } }); });</script>
+<table class="table">
+    <thead><tr><th>Товар</th><th>Цена</th><th>Кол-во</th><th>Сумма</th><th></th></tr></thead>
+    <tbody>
+    {% for item in cart_items %}
+    <tr>
+        <td>{{ item.product.name }}</td>
+        <td>{{ "%.2f"|format(item.product.price) }}</td>
+        <td><input type="number" min="1" value="{{ item.quantity }}" class="form-control quantity-input" data-item-id="{{ item.id }}" data-price="{{ item.product.price }}" style="width:80px"></td>
+        <td class="item-total">{{ "%.2f"|format(item.product.price * item.quantity) }}</td>
+        <td><a href="{{ url_for('remove_from_cart', item_id=item.id) }}" class="btn btn-danger btn-sm">Удалить</a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot><tr><td colspan="3"><strong>Итого</strong></td><td id="cart-total">{{ "%.2f"|format(total_price) }}</td><td></td></tr></tfoot>
+</table>
+<a href="{{ url_for('checkout') }}" class="btn btn-success">Оформить заказ</a>
 {% else %}
-<div class="alert alert-info">Ваша корзина пуста. <a href="{{ url_for('index') }}" class="alert-link">Перейти к покупкам</a></div>
+<p>Корзина пуста.</p>
 {% endif %}
+
+<script>
+document.querySelectorAll('.quantity-input').forEach(input => {
+    input.addEventListener('change', async function() {
+        const itemId = this.dataset.itemId;
+        const qty = this.value;
+        const price = parseFloat(this.dataset.price);
+        const response = await fetch('/update_cart/' + itemId, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({quantity: qty})
+        });
+        const data = await response.json();
+        if (data.success) {
+            this.closest('tr').querySelector('.item-total').textContent = (price * qty).toFixed(2);
+            let total = 0;
+            document.querySelectorAll('.item-total').forEach(el => total += parseFloat(el.textContent));
+            document.getElementById('cart-total').textContent = total.toFixed(2);
+        }
+    });
+});
+</script>
 {% endblock %}
