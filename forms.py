@@ -20,11 +20,11 @@ class ProductForm(FlaskForm):
         ('electronics', 'Электроника'),
         ('clothing', 'Одежда'),
         ('books', 'Книги'),
-        ('home', 'Товары для дома'),
+        ('home', 'Дом'),
         ('other', 'Другое')
     ], validators=[InputRequired()])
-    stock = IntegerField('Количество на складе', validators=[InputRequired(), NumberRange(min=1)])
+    stock = IntegerField('Количество', validators=[InputRequired(), NumberRange(min=1)])
 
 class ReviewForm(FlaskForm):
-    rating = SelectField('Оценка', choices=[(str(i), str(i)) for i in range(1, 6)], validators=[InputRequired()])
+    rating = SelectField('Оценка', choices=[(str(i), str(i)) for i in range(1,6)], validators=[InputRequired()])
     comment = TextAreaField('Отзыв', validators=[InputRequired(), Length(min=10)])
