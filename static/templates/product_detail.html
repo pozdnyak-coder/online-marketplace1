@@ -1,28 +1,37 @@
 {% extends "base.html" %}
 {% block title %}{{ product.name }}{% endblock %}
 {% block content %}
-<nav><a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm mb-3">← Назад в каталог</a></nav>
+<a href="{{ url_for('index') }}" class="btn btn-outline-secondary mb-3">← Назад</a>
 <div class="row">
     <div class="col-md-6">
-        <div class="card"><div class="card-body"><div class="bg-primary bg-gradient rounded d-flex align-items-center justify-content-center text-white mb-3" style="height: 250px;"><i class="bi bi-box-seam" style="font-size: 5rem;"></i></div>
-        <h1>{{ product.name }}</h1><p class="text-muted">Продавец: {{ product.seller.username }}</p><p>{{ product.description }}</p>
-        <h3 class="text-primary">{{ "%.2f"|format(product.price) }} ₽</h3><p>В наличии: {{ product.stock }} шт.</p><p><span class="badge bg-secondary">{{ product.category }}</span></p>
-        {% if current_user.is_authenticated %}<a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn btn-success btn-lg"><i class="bi bi-cart-plus"></i> Добавить в корзину</a>{% endif %}</div></div>
+        <h1>{{ product.name }}</h1>
+        <p>{{ product.description }}</p>
+        <h3>{{ "%.2f"|format(product.price) }} ₽</h3>
+        <p>В наличии: {{ product.stock }}</p>
+        <p>Продавец: {{ product.seller.username }}</p>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn btn-success">В корзину</a>
+        {% endif %}
     </div>
     <div class="col-md-6">
-        <div class="card mb-4"><div class="card-header"><h4><i class="bi bi-star"></i> Отзывы покупателей</h4></div><div class="card-body">
-            {% if product.reviews %}
-                {% for review in product.reviews %}<div class="border-bottom pb-2 mb-2"><div class="d-flex justify-content-between"><strong>{{ review.user.username }}</strong> <span class="rating">{% for i in range(review.rating) %}★{% endfor %}{% for i in range(5 - review.rating) %}☆{% endfor %}</span></div><p class="mb-1">{{ review.comment }}</p><small class="text-muted">{{ review.created_at.strftime('%d.%m.%Y') }}</small></div>{% endfor %}
-            {% else %}<p class="text-muted">Пока нет отзывов. Будьте первым!</p>{% endif %}
-        </div></div>
-        {% if current_user.is_authenticated %}<div class="card"><div class="card-header"><h5>Оставить отзыв</h5></div><div class="card-body">
-            <form method="POST" action="{{ url_for('add_review', product_id=product.id) }}">
-                {{ form.hidden_tag() }}
-                <div class="mb-3"><label class="form-label">Оценка</label>{{ form.rating(class="form-select") }}</div>
-                <div class="mb-3"><label class="form-label">Комментарий</label>{{ form.comment(class="form-control", rows="3", placeholder="Напишите ваше мнение о товаре...") }}</div>
-                <button type="submit" class="btn btn-primary">Отправить отзыв</button>
-            </form>
-        </div></div>{% endif %}
+        <h4>Отзывы</h4>
+        {% for review in product.reviews %}
+        <div class="border p-2 mb-2">
+            <strong>{{ review.user.username }}</strong> ({{ review.rating }}/5)
+            <p>{{ review.comment }}</p>
+        </div>
+        {% else %}
+        <p>Отзывов пока нет.</p>
+        {% endfor %}
+        {% if current_user.is_authenticated %}
+        <h5 class="mt-4">Оставить отзыв</h5>
+        <form method="POST" action="{{ url_for('add_review', product_id=product.id) }}">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">{{ form.rating.label }} {{ form.rating(class="form-select") }}</div>
+            <div class="mb-3">{{ form.comment.label }} {{ form.comment(class="form-control") }}</div>
+            <button class="btn btn-primary">Отправить</button>
+        </form>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
