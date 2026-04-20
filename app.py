@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, redirect, url_for, flash, request, session, jsonify
+from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Product, CartItem, Review
@@ -7,9 +7,15 @@ from forms import RegistrationForm, LoginForm, ProductForm, ReviewForm
 
 # --- Настройка приложения ---
 app = Flask(__name__)
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'marketplace.db')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
+
+# --- Настройка базы данных (PostgreSQL для Vercel) ---
+# Получаем строку подключения из переменной окружения
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///marketplace.db')
+# SQLAlchemy требует postgresql://, а Render/Neon иногда дают postgres://
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
@@ -20,16 +26,15 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Пожалуйста, войдите для доступа к этой странице.'
 
-
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
-
-# --- Создание таблиц в БД (выполняется один раз при старте) ---
+# --- Создание таблиц (для serverless окружения) ---
+# В Vercel функции могут запускаться в разных инстансах, поэтому создаём таблицы
+# перед первым запросом, если их ещё нет.
 with app.app_context():
     db.create_all()
-
 
 # --- Маршруты (страницы) приложения ---
 
@@ -48,7 +53,6 @@ def index():
     products = products.all()
     return render_template('index.html', products=products)
 
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     """Страница регистрации нового пользователя."""
@@ -57,14 +61,17 @@ def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         hashed_password = generate_password_hash(form.password.data)
-        user = User(username=form.username.data, email=form.email.data, password=hashed_password,
-                    is_seller=form.is_seller.data)
+        user = User(
+            username=form.username.data,
+            email=form.email.data,
+            password=hashed_password,
+            is_seller=form.is_seller.data
+        )
         db.session.add(user)
         db.session.commit()
         flash('Регистрация прошла успешно! Теперь вы можете войти.', 'success')
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -82,7 +89,6 @@ def login():
             flash('Неверное имя пользователя или пароль.', 'danger')
     return render_template('login.html', form=form)
 
-
 @app.route('/logout')
 @login_required
 def logout():
@@ -91,14 +97,12 @@ def logout():
     flash('Вы вышли из системы.', 'info')
     return redirect(url_for('index'))
 
-
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
     """Страница с детальной информацией о товаре и отзывами."""
     product = Product.query.get_or_404(product_id)
     form = ReviewForm()
     return render_template('product_detail.html', product=product, form=form)
-
 
 @app.route('/product/<int:product_id>/review', methods=['POST'])
 @login_required
@@ -107,13 +111,16 @@ def add_review(product_id):
     product = Product.query.get_or_404(product_id)
     form = ReviewForm()
     if form.validate_on_submit():
-        review = Review(user_id=current_user.id, product_id=product.id, rating=int(form.rating.data),
-                        comment=form.comment.data)
+        review = Review(
+            user_id=current_user.id,
+            product_id=product.id,
+            rating=int(form.rating.data),
+            comment=form.comment.data
+        )
         db.session.add(review)
         db.session.commit()
         flash('Ваш отзыв добавлен!', 'success')
     return redirect(url_for('product_detail', product_id=product_id))
-
 
 @app.route('/add_product', methods=['GET', 'POST'])
 @login_required
@@ -124,14 +131,19 @@ def add_product():
         return redirect(url_for('index'))
     form = ProductForm()
     if form.validate_on_submit():
-        product = Product(name=form.name.data, description=form.description.data, price=form.price.data,
-                          category=form.category.data, stock=form.stock.data, seller_id=current_user.id)
+        product = Product(
+            name=form.name.data,
+            description=form.description.data,
+            price=form.price.data,
+            category=form.category.data,
+            stock=form.stock.data,
+            seller_id=current_user.id
+        )
         db.session.add(product)
         db.session.commit()
         flash('Товар успешно добавлен!', 'success')
         return redirect(url_for('my_products'))
     return render_template('add_product.html', form=form)
-
 
 @app.route('/my_products')
 @login_required
@@ -142,7 +154,6 @@ def my_products():
         return redirect(url_for('index'))
     products = Product.query.filter_by(seller_id=current_user.id).all()
     return render_template('my_products.html', products=products)
-
 
 @app.route('/add_to_cart/<int:product_id>')
 @login_required
@@ -159,7 +170,6 @@ def add_to_cart(product_id):
     flash(f'{product.name} добавлен в корзину!', 'success')
     return redirect(url_for('index'))
 
-
 @app.route('/cart')
 @login_required
 def cart():
@@ -167,7 +177,6 @@ def cart():
     cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
     total_price = sum(item.product.price * item.quantity for item in cart_items)
     return render_template('cart.html', cart_items=cart_items, total_price=total_price)
-
 
 @app.route('/update_cart/<int:item_id>', methods=['POST'])
 @login_required
@@ -183,7 +192,6 @@ def update_cart(item_id):
         db.session.commit()
     return jsonify({'success': True, 'new_total': item.quantity * item.product.price})
 
-
 @app.route('/remove_from_cart/<int:item_id>')
 @login_required
 def remove_from_cart(item_id):
@@ -194,7 +202,6 @@ def remove_from_cart(item_id):
         db.session.commit()
         flash('Товар удален из корзины.', 'info')
     return redirect(url_for('cart'))
-
 
 @app.route('/checkout')
 @login_required
@@ -217,7 +224,7 @@ def checkout():
     flash('Заказ успешно оформлен! Спасибо за покупку.', 'success')
     return redirect(url_for('index'))
 
-
-# --- Запуск приложения ---
+# --- Точка входа для Vercel (serverless) ---
+# Vercel ожидает объект `app`, поэтому этот блок не обязателен, но оставим для локального запуска.
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
